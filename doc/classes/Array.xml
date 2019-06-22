@@ -92,7 +92,7 @@
 			<return type="Variant">
 			</return>
 			<description>
-				Returns the last element of the array if the array is not empty.
+				Returns the last element of the array, or [code]null[/code] if the array is empty (size==0).
 			</description>
 		</method>
 		<method name="bsearch">
@@ -183,7 +183,7 @@
 			<return type="Variant">
 			</return>
 			<description>
-				Returns the first element of the array if the array is not empty.
+				Returns the first element of the array, or [code]null[/code] if the array is empty (size==0).
 			</description>
 		</method>
 		<method name="has">
