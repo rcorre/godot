@@ -1,5 +1,10 @@
 [![Godot Engine logo](/logo.png)](https://godotengine.org)
 
+## Note
+
+This is my customized Godot build.
+It is currently based on 3.2 with [several patches](https://github.com/godotengine/godot/compare/3.2.2-stable...rcorre:master).
+
 ## Godot Engine
 
 Homepage: https://godotengine.org
