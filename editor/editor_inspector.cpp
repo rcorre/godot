@@ -751,6 +751,12 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 			update();
 			emit_signal("property_checked", property, checked);
 		}
+	} else if (mb.is_valid() && mb->is_pressed() && mb->get_button_index() == BUTTON_RIGHT) {
+		menu->set_position(get_global_transform().xform(get_local_mouse_position()));
+		menu->set_size(Vector2(1, 1));
+		menu->popup();
+		select();
+		return;
 	}
 }
 
@@ -849,6 +855,17 @@ String EditorProperty::get_tooltip_text() const {
 	return tooltip_text;
 }
 
+void EditorProperty::menu_option(int p_option) {
+	switch (p_option) {
+		case MENU_COPY: {
+			EditorNode::get_singleton()->get_inspector()->set_property_clipboard(object->get(property));
+		} break;
+		case MENU_PASTE: {
+			emit_changed(property, EditorNode::get_singleton()->get_inspector()->get_property_clipboard());
+		} break;
+	}
+}
+
 void EditorProperty::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_label", "text"), &EditorProperty::set_label);
 	ClassDB::bind_method(D_METHOD("get_label"), &EditorProperty::get_label);
@@ -929,6 +946,12 @@ EditorProperty::EditorProperty() {
 	label_reference = nullptr;
 	bottom_editor = nullptr;
 	set_process_unhandled_key_input(true);
+
+	menu = memnew(PopupMenu);
+	menu->add_item(TTR("Copy"), MENU_COPY, KEY_MASK_CMD | KEY_C);
+	menu->add_item(TTR("Paste"), MENU_PASTE, KEY_MASK_CMD | KEY_V);
+	menu->connect("id_pressed", callable_mp(this, &EditorProperty::menu_option));
+	add_child(menu);
 }
 
 ////////////////////////////////////////////////
@@ -2491,6 +2514,14 @@ void EditorInspector::_update_script_class_properties(const Object &p_object, Li
 	r_list.erase(bottom);
 }
 
+void EditorInspector::set_property_clipboard(const Variant &p_value) {
+	property_clipboard = p_value;
+}
+
+Variant EditorInspector::get_property_clipboard() const {
+	return property_clipboard;
+}
+
 void EditorInspector::_bind_methods() {
 	ClassDB::bind_method("_edit_request_change", &EditorInspector::_edit_request_change);
 
@@ -2536,6 +2567,7 @@ EditorInspector::EditorInspector() {
 	property_focusable = -1;
 	sub_inspector = false;
 	deletable_properties = false;
+	property_clipboard = Variant();
 
 	get_v_scrollbar()->connect("value_changed", callable_mp(this, &EditorInspector::_vscroll_changed));
 	update_scroll_request = -1;
