@@ -30,10 +30,12 @@
 
 #include "editor_inspector.h"
 #include "array_property_edit.h"
+#include "core/os/keyboard.h"
 #include "dictionary_property_edit.h"
 #include "editor_feature_profile.h"
 #include "editor_node.h"
 #include "editor_scale.h"
+#include "editor_settings.h"
 #include "multi_node_edit.h"
 #include "scene/resources/packed_scene.h"
 
@@ -710,6 +712,13 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
+void EditorProperty::_unhandled_key_input(Ref<InputEvent> p_event) {
+	if (selected && ED_IS_SHORTCUT("property_editor/copy_property_path", p_event)) {
+		OS::get_singleton()->set_clipboard(property);
+		accept_event();
+	}
+}
+
 void EditorProperty::set_label_reference(Control *p_control) {
 
 	label_reference = p_control;
@@ -826,6 +835,7 @@ void EditorProperty::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_gui_input"), &EditorProperty::_gui_input);
 	ClassDB::bind_method(D_METHOD("_focusable_focused"), &EditorProperty::_focusable_focused);
+	ClassDB::bind_method(D_METHOD("_unhandled_key_input"), &EditorProperty::_unhandled_key_input);
 
 	ClassDB::bind_method(D_METHOD("get_tooltip_text"), &EditorProperty::get_tooltip_text);
 
@@ -876,6 +886,7 @@ EditorProperty::EditorProperty() {
 	selected_focusable = -1;
 	label_reference = NULL;
 	bottom_editor = NULL;
+	set_process_unhandled_key_input(true);
 }
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////
@@ -2373,4 +2384,5 @@ EditorInspector::EditorInspector() {
 
 	get_v_scrollbar()->connect("value_changed", this, "_vscroll_changed");
 	update_scroll_request = -1;
+	ED_SHORTCUT("property_editor/copy_property_path", TTR("Copy Property Path"), KEY_MASK_CMD | KEY_C);
 }
