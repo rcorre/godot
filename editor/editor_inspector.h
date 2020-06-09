@@ -52,8 +52,9 @@ class EditorProperty : public Container {
 
 public:
 	enum MenuItems {
-		MENU_COPY,
-		MENU_PASTE
+		MENU_COPY_PROPERTY,
+		MENU_COPY_PROPERTY_PATH,
+		MENU_PASTE_PROPERTY
 	};
 
 private:

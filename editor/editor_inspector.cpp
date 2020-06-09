@@ -719,8 +719,18 @@ void EditorProperty::_gui_input(const Ref<InputEvent> &p_event) {
 }
 
 void EditorProperty::_unhandled_key_input(Ref<InputEvent> p_event) {
-	if (selected && ED_IS_SHORTCUT("property_editor/copy_property_path", p_event)) {
-		OS::get_singleton()->set_clipboard(property);
+	if (!selected) {
+		return;
+	}
+
+	if (ED_IS_SHORTCUT("property_editor/copy_property", p_event)) {
+		menu_option(MENU_COPY_PROPERTY);
+		accept_event();
+	} else if (ED_IS_SHORTCUT("property_editor/paste_property", p_event)) {
+		menu_option(MENU_PASTE_PROPERTY);
+		accept_event();
+	} else if (ED_IS_SHORTCUT("property_editor/copy_property_path", p_event)) {
+		menu_option(MENU_COPY_PROPERTY_PATH);
 		accept_event();
 	}
 }
@@ -818,11 +828,14 @@ String EditorProperty::get_tooltip_text() const {
 
 void EditorProperty::menu_option(int p_option) {
 	switch (p_option) {
-		case MENU_COPY: {
+		case MENU_COPY_PROPERTY: {
 			EditorNode::get_singleton()->get_inspector()->set_property_clipboard(object->get(property));
 		} break;
-		case MENU_PASTE: {
+		case MENU_PASTE_PROPERTY: {
 			emit_changed(property, EditorNode::get_singleton()->get_inspector()->get_property_clipboard());
+		} break;
+		case MENU_COPY_PROPERTY_PATH: {
+			OS::get_singleton()->set_clipboard(property);
 		} break;
 	}
 }
@@ -906,8 +919,9 @@ EditorProperty::EditorProperty() {
 	set_process_unhandled_key_input(true);
 
 	menu = memnew(PopupMenu);
-	menu->add_item(TTR("Copy"), MENU_COPY, KEY_MASK_CMD | KEY_C);
-	menu->add_item(TTR("Paste"), MENU_PASTE, KEY_MASK_CMD | KEY_V);
+	menu->add_shortcut(ED_GET_SHORTCUT("property_editor/copy_property"), MENU_COPY_PROPERTY);
+	menu->add_shortcut(ED_GET_SHORTCUT("property_editor/paste_property"), MENU_PASTE_PROPERTY);
+	menu->add_shortcut(ED_GET_SHORTCUT("property_editor/copy_property_path"), MENU_COPY_PROPERTY_PATH);
 	menu->connect("id_pressed", this, "menu_option");
 	add_child(menu);
 }
@@ -2414,5 +2428,7 @@ EditorInspector::EditorInspector() {
 
 	get_v_scrollbar()->connect("value_changed", this, "_vscroll_changed");
 	update_scroll_request = -1;
-	ED_SHORTCUT("property_editor/copy_property_path", TTR("Copy Property Path"), KEY_MASK_CMD | KEY_C);
+	ED_SHORTCUT("property_editor/copy_property", TTR("Copy Property"), KEY_MASK_CMD | KEY_C);
+	ED_SHORTCUT("property_editor/paste_property", TTR("Paste Property"), KEY_MASK_CMD | KEY_V);
+	ED_SHORTCUT("property_editor/copy_property_path", TTR("Copy Property Path"), KEY_MASK_CMD | KEY_MASK_SHIFT | KEY_C);
 }
