@@ -1418,15 +1418,6 @@ void EditorNode::_mark_unsaved_scenes() {
 void EditorNode::_dialog_action(String p_file) {
 
 	switch (current_option) {
-		case FILE_NEW_INHERITED_SCENE: {
-
-			Node *scene = editor_data.get_edited_scene_root();
-			// If the previous scene is rootless, just close it in favor of the new one.
-			if (!scene)
-				_menu_option_confirm(FILE_CLOSE, true);
-
-			load_scene(p_file, false, true);
-		} break;
 		case FILE_OPEN_SCENE: {
 
 			load_scene(p_file);
@@ -2069,7 +2060,6 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			new_scene();
 
 		} break;
-		case FILE_NEW_INHERITED_SCENE:
 		case FILE_OPEN_SCENE: {
 
 			file->set_mode(EditorFileDialog::MODE_OPEN_FILE);
@@ -2089,6 +2079,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			file->popup_centered_ratio();
 
 		} break;
+		case FILE_NEW_INHERITED_SCENE:
 		case FILE_QUICK_OPEN: {
 
 			quick_open->popup_dialog("Resource", true);
@@ -3594,7 +3585,14 @@ void EditorNode::_quick_opened() {
 	for (int i = 0; i < files.size(); i++) {
 		String res_path = files[i];
 
-		if (quick_open->get_base_type() == "PackedScene") {
+		if (current_option == FILE_NEW_INHERITED_SCENE) {
+			Node *scene = editor_data.get_edited_scene_root();
+			// If the previous scene is rootless, just close it in favor of the new one.
+			if (!scene)
+				_menu_option_confirm(FILE_CLOSE, true);
+
+			load_scene(res_path, false, true);
+		} else if (quick_open->get_base_type() == "PackedScene") {
 			open_request(res_path);
 		} else {
 			load_resource(res_path);
