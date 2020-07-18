@@ -296,6 +296,7 @@ private:
 	Point2 _point_to_screen(const Vector3 &p_point);
 	Transform _get_camera_transform() const;
 	int get_selected_count() const;
+	void cancel_transform();
 
 	Vector3 _get_camera_position() const;
 	Vector3 _get_camera_normal() const;
@@ -364,6 +365,8 @@ private:
 		int gizmo_handle;
 		Variant gizmo_initial_value;
 		Vector3 gizmo_initial_pos;
+		bool original_local;
+		bool instant;
 	} _edit;
 
 	struct Cursor {
@@ -394,7 +397,7 @@ private:
 
 	real_t zoom_indicator_delay;
 
-	RID move_gizmo_instance[3], move_plane_gizmo_instance[3], rotate_gizmo_instance[3], scale_gizmo_instance[3], scale_plane_gizmo_instance[3];
+	RID move_gizmo_instance[3], move_plane_gizmo_instance[3], rotate_gizmo_instance[3], scale_gizmo_instance[3], scale_plane_gizmo_instance[3], axis_gizmo_instance[3];
 
 	String last_message;
 	String message;
@@ -441,6 +444,9 @@ private:
 
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
+
+	void begin_transform(TransformMode p_mode, bool instant);
+	void commit_transform();
 
 protected:
 	void _notification(int p_what);
@@ -585,7 +591,7 @@ private:
 	bool grid_enable[3]; //should be always visible if true
 	bool grid_enabled;
 
-	Ref<ArrayMesh> move_gizmo[3], move_plane_gizmo[3], rotate_gizmo[3], scale_gizmo[3], scale_plane_gizmo[3];
+	Ref<ArrayMesh> move_gizmo[3], move_plane_gizmo[3], rotate_gizmo[3], scale_gizmo[3], scale_plane_gizmo[3], axis_gizmo[3];
 	Ref<SpatialMaterial> gizmo_color[3];
 	Ref<SpatialMaterial> plane_gizmo_color[3];
 	Ref<SpatialMaterial> gizmo_color_hl[3];
@@ -745,12 +751,14 @@ public:
 
 	ToolMode get_tool_mode() const { return tool_mode; }
 	bool are_local_coords_enabled() const { return tool_option_button[SpatialEditor::TOOL_OPT_LOCAL_COORDS]->is_pressed(); }
+	void set_local_coords_enabled(bool on) const { tool_option_button[SpatialEditor::TOOL_OPT_LOCAL_COORDS]->set_pressed(on); }
 	bool is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
 	float get_translate_snap() const;
 	float get_rotate_snap() const;
 	float get_scale_snap() const;
 
 	Ref<ArrayMesh> get_move_gizmo(int idx) const { return move_gizmo[idx]; }
+	Ref<ArrayMesh> get_axis_gizmo(int idx) const { return axis_gizmo[idx]; }
 	Ref<ArrayMesh> get_move_plane_gizmo(int idx) const { return move_plane_gizmo[idx]; }
 	Ref<ArrayMesh> get_rotate_gizmo(int idx) const { return rotate_gizmo[idx]; }
 	Ref<ArrayMesh> get_scale_gizmo(int idx) const { return scale_gizmo[idx]; }
