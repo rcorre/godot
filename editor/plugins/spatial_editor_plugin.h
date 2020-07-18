@@ -364,6 +364,7 @@ private:
 		int gizmo_handle;
 		Variant gizmo_initial_value;
 		Vector3 gizmo_initial_pos;
+		bool original_local;
 	} _edit;
 
 	struct Cursor {
@@ -745,6 +746,7 @@ public:
 
 	ToolMode get_tool_mode() const { return tool_mode; }
 	bool are_local_coords_enabled() const { return tool_option_button[SpatialEditor::TOOL_OPT_LOCAL_COORDS]->is_pressed(); }
+	void set_local_coords_enabled(bool on) const { tool_option_button[SpatialEditor::TOOL_OPT_LOCAL_COORDS]->set_pressed(on); }
 	bool is_snap_enabled() const { return snap_enabled ^ snap_key_enabled; }
 	float get_translate_snap() const;
 	float get_rotate_snap() const;

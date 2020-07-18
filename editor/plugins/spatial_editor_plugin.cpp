@@ -752,6 +752,7 @@ void SpatialEditorViewport::_update_name() {
 
 void SpatialEditorViewport::_compute_edit(const Point2 &p_point) {
 
+	_edit.original_local = spatial_editor->are_local_coords_enabled();
 	_edit.click_ray = _get_ray(Vector2(p_point.x, p_point.y));
 	_edit.click_ray_pos = _get_ray_pos(Vector2(p_point.x, p_point.y));
 	_edit.plane = TRANSFORM_VIEW;
@@ -1384,6 +1385,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 						}
 						undo_redo->commit_action();
 						_edit.mode = TRANSFORM_NONE;
+						spatial_editor->set_local_coords_enabled(_edit.original_local);
 						set_message("");
 					}
 
@@ -1980,30 +1982,42 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 
 		if (_edit.mode != TRANSFORM_NONE) {
 			// We're actively transforming, handle keys specially
-			bool handled = true;
+			TransformPlane new_plane = TRANSFORM_VIEW;
+			String new_message;
 			if (ED_IS_SHORTCUT("spatial_editor/lock_transform_x", p_event)) {
-				_edit.plane = TRANSFORM_X_AXIS;
-				set_message(TTR("X-Axis Transform."), 2);
+				new_plane = TRANSFORM_X_AXIS;
+				new_message = TTR("X-Axis Transform.");
 			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_y", p_event)) {
-				_edit.plane = TRANSFORM_Y_AXIS;
-				set_message(TTR("Y-Axis Transform."), 2);
+				new_plane = TRANSFORM_Y_AXIS;
+				new_message = TTR("Y-Axis Transform.");
 			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_z", p_event)) {
-				_edit.plane = TRANSFORM_Z_AXIS;
-				set_message(TTR("Z-Axis Transform."), 2);
+				new_plane = TRANSFORM_Z_AXIS;
+				new_message = TTR("Z-Axis Transform.");
 			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_yz", p_event)) {
-				_edit.plane = TRANSFORM_YZ;
-				set_message(TTR("YZ-Plane Transform."), 2);
+				new_plane = TRANSFORM_YZ;
+				new_message = TTR("YZ-Plane Transform.");
 			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_xz", p_event)) {
-				_edit.plane = TRANSFORM_XZ;
-				set_message(TTR("XZ-Plane Transform."), 2);
+				new_plane = TRANSFORM_XZ;
+				new_message = TTR("XZ-Plane Transform.");
 			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_xy", p_event)) {
-				_edit.plane = TRANSFORM_XY;
-				set_message(TTR("XY-Plane Transform."), 2);
-			} else {
-				handled = false;
+				new_plane = TRANSFORM_XY;
+				new_message = TTR("XY-Plane Transform.");
 			}
 
-			if (handled) {
+			if (new_plane != TRANSFORM_VIEW) {
+				if (new_plane != _edit.plane) {
+					// lock me once and get a global constraint
+					_edit.plane = new_plane;
+					spatial_editor->set_local_coords_enabled(false);
+				} else if (!spatial_editor->are_local_coords_enabled()) {
+					// lock me twice and get a local constraint
+					spatial_editor->set_local_coords_enabled(true);
+				} else {
+					// lock me thrice and we're back where we started
+					_edit.plane = TRANSFORM_VIEW;
+					spatial_editor->set_local_coords_enabled(false);
+				}
+				set_message(new_message, 2);
 				accept_event();
 				return;
 			}
