@@ -1978,6 +1978,37 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 		if (!k->is_pressed())
 			return;
 
+		if (_edit.mode != TRANSFORM_NONE) {
+			// We're actively transforming, handle keys specially
+			bool handled = true;
+			if (ED_IS_SHORTCUT("spatial_editor/lock_transform_x", p_event)) {
+				_edit.plane = TRANSFORM_X_AXIS;
+				set_message(TTR("X-Axis Transform."), 2);
+			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_y", p_event)) {
+				_edit.plane = TRANSFORM_Y_AXIS;
+				set_message(TTR("Y-Axis Transform."), 2);
+			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_z", p_event)) {
+				_edit.plane = TRANSFORM_Z_AXIS;
+				set_message(TTR("Z-Axis Transform."), 2);
+			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_yz", p_event)) {
+				_edit.plane = TRANSFORM_YZ;
+				set_message(TTR("YZ-Plane Transform."), 2);
+			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_xz", p_event)) {
+				_edit.plane = TRANSFORM_XZ;
+				set_message(TTR("XZ-Plane Transform."), 2);
+			} else if (ED_IS_SHORTCUT("spatial_editor/lock_transform_xy", p_event)) {
+				_edit.plane = TRANSFORM_XY;
+				set_message(TTR("XY-Plane Transform."), 2);
+			} else {
+				handled = false;
+			}
+
+			if (handled) {
+				accept_event();
+				return;
+			}
+		}
+
 		if (ED_IS_SHORTCUT("spatial_editor/snap", p_event)) {
 			if (_edit.mode != TRANSFORM_NONE) {
 				_edit.snap = !_edit.snap;
@@ -3916,6 +3947,12 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	ED_SHORTCUT("spatial_editor/freelook_down", TTR("Freelook Down"), KEY_Q);
 	ED_SHORTCUT("spatial_editor/freelook_speed_modifier", TTR("Freelook Speed Modifier"), KEY_SHIFT);
 	ED_SHORTCUT("spatial_editor/freelook_slow_modifier", TTR("Freelook Slow Modifier"), KEY_ALT);
+	ED_SHORTCUT("spatial_editor/lock_transform_x", TTR("Lock Transformation to X axis"), KEY_X);
+	ED_SHORTCUT("spatial_editor/lock_transform_y", TTR("Lock Transformation to Y axis"), KEY_Y);
+	ED_SHORTCUT("spatial_editor/lock_transform_z", TTR("Lock Transformation to Z axis"), KEY_Z);
+	ED_SHORTCUT("spatial_editor/lock_transform_yz", TTR("Lock Transformation to YZ plane"), KEY_MASK_SHIFT | KEY_X);
+	ED_SHORTCUT("spatial_editor/lock_transform_xz", TTR("Lock Transformation to XZ plane"), KEY_MASK_SHIFT | KEY_Y);
+	ED_SHORTCUT("spatial_editor/lock_transform_xy", TTR("Lock Transformation to XY plane"), KEY_MASK_SHIFT | KEY_Z);
 
 	preview_camera = memnew(CheckBox);
 	preview_camera->set_text(TTR("Preview"));
