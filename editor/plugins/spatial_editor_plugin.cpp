@@ -399,6 +399,27 @@ int SpatialEditorViewport::get_selected_count() const {
 	return count;
 }
 
+void SpatialEditorViewport::cancel_transform() {
+	_edit.mode = TRANSFORM_NONE;
+
+	List<Node *> &selection = editor_selection->get_selected_node_list();
+
+	for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
+
+		Spatial *sp = Object::cast_to<Spatial>(E->get());
+		if (!sp)
+			continue;
+
+		SpatialEditorSelectedItem *se = editor_selection->get_node_editor_data<SpatialEditorSelectedItem>(sp);
+		if (!se)
+			continue;
+
+		sp->set_global_transform(se->original);
+	}
+	surface->update();
+	set_message(TTR("Transform Aborted."), 3);
+}
+
 float SpatialEditorViewport::get_znear() const {
 
 	return CLAMP(spatial_editor->get_znear(), MIN_Z, MAX_Z);
@@ -1143,25 +1164,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 				}
 
 				if (_edit.mode != TRANSFORM_NONE && b->is_pressed()) {
-					//cancel motion
-					_edit.mode = TRANSFORM_NONE;
-
-					List<Node *> &selection = editor_selection->get_selected_node_list();
-
-					for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
-
-						Spatial *sp = Object::cast_to<Spatial>(E->get());
-						if (!sp)
-							continue;
-
-						SpatialEditorSelectedItem *se = editor_selection->get_node_editor_data<SpatialEditorSelectedItem>(sp);
-						if (!se)
-							continue;
-
-						sp->set_global_transform(se->original);
-					}
-					surface->update();
-					set_message(TTR("Transform Aborted."), 3);
+					cancel_transform();
 				}
 
 				if (b->is_pressed()) {
@@ -2083,6 +2086,9 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 			}
 
 			set_message(TTR("Animation Key Inserted."));
+		}
+		if (ED_IS_SHORTCUT("spatial_editor/cancel_transform", p_event) && _edit.mode != TRANSFORM_NONE) {
+			cancel_transform();
 		}
 
 		// Freelook doesn't work in orthogonal mode.
@@ -3967,6 +3973,7 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	ED_SHORTCUT("spatial_editor/lock_transform_yz", TTR("Lock Transformation to YZ plane"), KEY_MASK_SHIFT | KEY_X);
 	ED_SHORTCUT("spatial_editor/lock_transform_xz", TTR("Lock Transformation to XZ plane"), KEY_MASK_SHIFT | KEY_Y);
 	ED_SHORTCUT("spatial_editor/lock_transform_xy", TTR("Lock Transformation to XY plane"), KEY_MASK_SHIFT | KEY_Z);
+	ED_SHORTCUT("spatial_editor/cancel_transform", TTR("Cancel Transformation"), KEY_ESCAPE);
 
 	preview_camera = memnew(CheckBox);
 	preview_camera->set_text(TTR("Preview"));

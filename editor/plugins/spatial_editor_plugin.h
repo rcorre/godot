@@ -296,6 +296,7 @@ private:
 	Point2 _point_to_screen(const Vector3 &p_point);
 	Transform _get_camera_transform() const;
 	int get_selected_count() const;
+	void cancel_transform();
 
 	Vector3 _get_camera_position() const;
 	Vector3 _get_camera_normal() const;
