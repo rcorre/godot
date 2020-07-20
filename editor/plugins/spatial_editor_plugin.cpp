@@ -3113,6 +3113,13 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(scale_plane_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(scale_plane_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(scale_plane_gizmo_instance[i], layer);
+
+		axis_gizmo_instance[i] = VS::get_singleton()->instance_create();
+		VS::get_singleton()->instance_set_base(axis_gizmo_instance[i], spatial_editor->get_axis_gizmo(i)->get_rid());
+		VS::get_singleton()->instance_set_scenario(axis_gizmo_instance[i], get_tree()->get_root()->get_world()->get_scenario());
+		VS::get_singleton()->instance_set_visible(axis_gizmo_instance[i], true); // TODO set back to false
+		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(axis_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
+		VS::get_singleton()->instance_set_layer_mask(axis_gizmo_instance[i], layer);
 	}
 }
 
@@ -3124,6 +3131,7 @@ void SpatialEditorViewport::_finish_gizmo_instances() {
 		VS::get_singleton()->free(rotate_gizmo_instance[i]);
 		VS::get_singleton()->free(scale_gizmo_instance[i]);
 		VS::get_singleton()->free(scale_plane_gizmo_instance[i]);
+		VS::get_singleton()->free(axis_gizmo_instance[i]);
 	}
 }
 void SpatialEditorViewport::_toggle_camera_preview(bool p_activate) {
@@ -3216,6 +3224,7 @@ void SpatialEditorViewport::update_transform_gizmo_view() {
 			VisualServer::get_singleton()->instance_set_visible(rotate_gizmo_instance[i], false);
 			VisualServer::get_singleton()->instance_set_visible(scale_gizmo_instance[i], false);
 			VisualServer::get_singleton()->instance_set_visible(scale_plane_gizmo_instance[i], false);
+			VisualServer::get_singleton()->instance_set_visible(axis_gizmo_instance[i], false);
 		}
 		return;
 	}
@@ -3253,6 +3262,12 @@ void SpatialEditorViewport::update_transform_gizmo_view() {
 		VisualServer::get_singleton()->instance_set_visible(scale_gizmo_instance[i], spatial_editor->is_gizmo_visible() && (spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_SCALE));
 		VisualServer::get_singleton()->instance_set_transform(scale_plane_gizmo_instance[i], xform);
 		VisualServer::get_singleton()->instance_set_visible(scale_plane_gizmo_instance[i], spatial_editor->is_gizmo_visible() && (spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_SCALE));
+		VisualServer::get_singleton()->instance_set_transform(axis_gizmo_instance[i], xform);
+		VisualServer::get_singleton()->instance_set_visible(axis_gizmo_instance[i], spatial_editor->is_gizmo_visible() && _edit.mode != TRANSFORM_NONE && (
+			(i == 0 && (_edit.plane == TRANSFORM_X_AXIS || _edit.plane == TRANSFORM_XY || _edit.plane == TRANSFORM_XZ)) ||
+			(i == 1 && (_edit.plane == TRANSFORM_Y_AXIS || _edit.plane == TRANSFORM_XY || _edit.plane == TRANSFORM_YZ)) ||
+			(i == 2 && (_edit.plane == TRANSFORM_Z_AXIS || _edit.plane == TRANSFORM_XY || _edit.plane == TRANSFORM_YZ))
+		));
 	}
 }
 
@@ -5196,6 +5211,7 @@ void SpatialEditor::_init_indicators() {
 			rotate_gizmo[i] = Ref<ArrayMesh>(memnew(ArrayMesh));
 			scale_gizmo[i] = Ref<ArrayMesh>(memnew(ArrayMesh));
 			scale_plane_gizmo[i] = Ref<ArrayMesh>(memnew(ArrayMesh));
+			axis_gizmo[i] = Ref<ArrayMesh>(memnew(ArrayMesh));
 
 			Ref<SpatialMaterial> mat = memnew(SpatialMaterial);
 			mat->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
@@ -5435,6 +5451,19 @@ void SpatialEditor::_init_indicators() {
 				Ref<SpatialMaterial> plane_mat_hl = plane_mat->duplicate();
 				plane_mat_hl->set_albedo(Color(col.r, col.g, col.b, 1.0));
 				plane_gizmo_color_hl[i] = plane_mat_hl; // needed, so we can draw planes from both sides
+			}
+
+			// Lines to visualize transforms locked to an axis/plane
+			{
+
+				Ref<SurfaceTool> surftool = memnew(SurfaceTool);
+				surftool->begin(Mesh::PRIMITIVE_LINES);
+
+				// line extending through infinity(ish)
+				surftool->add_vertex(ivec * -99999);
+				surftool->add_vertex(ivec * 99999);
+				surftool->set_material(mat_hl);
+				surftool->commit(axis_gizmo[i]);
 			}
 		}
 	}
