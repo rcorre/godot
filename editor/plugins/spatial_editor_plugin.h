@@ -366,6 +366,7 @@ private:
 		Variant gizmo_initial_value;
 		Vector3 gizmo_initial_pos;
 		bool original_local;
+		bool instant;
 	} _edit;
 
 	struct Cursor {
@@ -443,6 +444,9 @@ private:
 
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
+
+	void begin_transform(TransformMode p_mode, bool instant);
+	void commit_transform();
 
 protected:
 	void _notification(int p_what);

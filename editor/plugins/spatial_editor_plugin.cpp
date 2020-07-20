@@ -1227,6 +1227,11 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 
 				if (b->is_pressed()) {
 
+					if (_edit.mode != TRANSFORM_NONE && _edit.instant) {
+						commit_transform();
+						break; // just commit the edit, stop processing the event so we don't deselect the object
+					}
+
 					NavigationScheme nav_scheme = (NavigationScheme)EditorSettings::get_singleton()->get("editors/3d/navigation/navigation_scheme").operator int();
 					if ((nav_scheme == NAVIGATION_MAYA || nav_scheme == NAVIGATION_MODO) && b->get_alt()) {
 						break;
@@ -1275,33 +1280,17 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					clicked_includes_current = false;
 
 					if ((spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_SELECT && b->get_control()) || spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_ROTATE) {
-
-						/* HANDLE ROTATION */
-						if (get_selected_count() == 0)
-							break; //bye
-						//handle rotate
-						_edit.mode = TRANSFORM_ROTATE;
-						_compute_edit(b->get_position());
+						begin_transform(TRANSFORM_ROTATE, false);
 						break;
 					}
 
 					if (spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_MOVE) {
-
-						if (get_selected_count() == 0)
-							break; //bye
-						//handle translate
-						_edit.mode = TRANSFORM_TRANSLATE;
-						_compute_edit(b->get_position());
+						begin_transform(TRANSFORM_TRANSLATE, false);
 						break;
 					}
 
 					if (spatial_editor->get_tool_mode() == SpatialEditor::TOOL_MODE_SCALE) {
-
-						if (get_selected_count() == 0)
-							break; //bye
-						//handle scale
-						_edit.mode = TRANSFORM_SCALE;
-						_compute_edit(b->get_position());
+						begin_transform(TRANSFORM_SCALE, false);
 						break;
 					}
 
@@ -1367,29 +1356,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					}
 
 					if (_edit.mode != TRANSFORM_NONE) {
-
-						static const char *_transform_name[4] = { "None", "Rotate", "Translate", "Scale" };
-						undo_redo->create_action(_transform_name[_edit.mode]);
-
-						List<Node *> &selection = editor_selection->get_selected_node_list();
-
-						for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
-
-							Spatial *sp = Object::cast_to<Spatial>(E->get());
-							if (!sp)
-								continue;
-
-							SpatialEditorSelectedItem *se = editor_selection->get_node_editor_data<SpatialEditorSelectedItem>(sp);
-							if (!se)
-								continue;
-
-							undo_redo->add_do_method(sp, "set_global_transform", sp->get_global_gizmo_transform());
-							undo_redo->add_undo_method(sp, "set_global_transform", se->original);
-						}
-						undo_redo->commit_action();
-						_edit.mode = TRANSFORM_NONE;
-						spatial_editor->set_local_coords_enabled(_edit.original_local);
-						set_message("");
+						commit_transform();
 					}
 
 					surface->update();
@@ -1445,7 +1412,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 			String n = _edit.gizmo->get_handle_name(_edit.gizmo_handle);
 			set_message(n + ": " + String(v));
 
-		} else if (m->get_button_mask() & BUTTON_MASK_LEFT) {
+		} else if (m->get_button_mask() & BUTTON_MASK_LEFT || _edit.instant) {
 
 			if (nav_scheme == NAVIGATION_MAYA && m->get_alt()) {
 				nav_mode = NAVIGATION_ORBIT;
@@ -2089,6 +2056,15 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 		}
 		if (ED_IS_SHORTCUT("spatial_editor/cancel_transform", p_event) && _edit.mode != TRANSFORM_NONE) {
 			cancel_transform();
+		}
+		if (ED_IS_SHORTCUT("spatial_editor/instant_translate", p_event)) {
+			begin_transform(TRANSFORM_TRANSLATE, true);
+		}
+		if (ED_IS_SHORTCUT("spatial_editor/instant_rotate", p_event)) {
+			begin_transform(TRANSFORM_ROTATE, true);
+		}
+		if (ED_IS_SHORTCUT("spatial_editor/instant_scale", p_event)) {
+			begin_transform(TRANSFORM_SCALE, true);
 		}
 
 		// Freelook doesn't work in orthogonal mode.
@@ -3844,12 +3820,49 @@ void SpatialEditorViewport::drop_data_fw(const Point2 &p_point, const Variant &p
 	_perform_drop_data();
 }
 
+void SpatialEditorViewport::begin_transform(TransformMode p_mode, bool instant) {
+	if (get_selected_count() == 0)
+		return;
+	_edit.mode = p_mode;
+	_compute_edit(_edit.mouse_pos);
+	_edit.instant = instant;
+	_edit.snap = spatial_editor->is_snap_enabled();
+}
+
+void SpatialEditorViewport::commit_transform() {
+	ERR_FAIL_COND(_edit.mode == TRANSFORM_NONE);
+	static const char *_transform_name[4] = { "None", "Rotate", "Translate", "Scale" };
+	undo_redo->create_action(_transform_name[_edit.mode]);
+
+	List<Node *> &selection = editor_selection->get_selected_node_list();
+
+	for (List<Node *>::Element *E = selection.front(); E; E = E->next()) {
+
+		Spatial *sp = Object::cast_to<Spatial>(E->get());
+		if (!sp)
+			continue;
+
+		SpatialEditorSelectedItem *se = editor_selection->get_node_editor_data<SpatialEditorSelectedItem>(sp);
+		if (!se)
+			continue;
+
+		undo_redo->add_do_method(sp, "set_global_transform", sp->get_global_gizmo_transform());
+		undo_redo->add_undo_method(sp, "set_global_transform", se->original);
+	}
+	undo_redo->commit_action();
+	_edit.mode = TRANSFORM_NONE;
+	_edit.instant = 0;
+	spatial_editor->set_local_coords_enabled(_edit.original_local);
+	set_message("");
+}
+
 SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, EditorNode *p_editor, int p_index) {
 
 	_edit.mode = TRANSFORM_NONE;
 	_edit.plane = TRANSFORM_VIEW;
 	_edit.edited_gizmo = 0;
 	_edit.snap = 1;
+	_edit.instant = 0;
 	_edit.gizmo_handle = 0;
 
 	index = p_index;
@@ -3974,6 +3987,9 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 	ED_SHORTCUT("spatial_editor/lock_transform_xz", TTR("Lock Transformation to XZ plane"), KEY_MASK_SHIFT | KEY_Y);
 	ED_SHORTCUT("spatial_editor/lock_transform_xy", TTR("Lock Transformation to XY plane"), KEY_MASK_SHIFT | KEY_Z);
 	ED_SHORTCUT("spatial_editor/cancel_transform", TTR("Cancel Transformation"), KEY_ESCAPE);
+	ED_SHORTCUT("spatial_editor/instant_translate", TTR("Begin Translate Transformation"));
+	ED_SHORTCUT("spatial_editor/instant_rotate", TTR("Begin Rotate Transformation"));
+	ED_SHORTCUT("spatial_editor/instant_scale", TTR("Begin Scale Transformation"));
 
 	preview_camera = memnew(CheckBox);
 	preview_camera->set_text(TTR("Preview"));
