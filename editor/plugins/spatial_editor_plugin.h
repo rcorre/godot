@@ -848,8 +848,8 @@ protected:
 
 public:
 	void create_material(const String &p_name, const Color &p_color, bool p_billboard = false, bool p_on_top = false, bool p_use_vertex_color = false);
-	void create_icon_material(const String &p_name, const Ref<Texture> &p_texture, bool p_on_top = false, const Color &p_albedo = Color(1, 1, 1, 1));
-	void create_handle_material(const String &p_name, bool p_billboard = false);
+	void create_icon_material(const String &p_name, const Ref<Texture> &p_icon, bool p_on_top = false, const Color &p_albedo = Color(1, 1, 1, 1));
+	void create_handle_material(const String &p_name, bool p_billboard = false, const Ref<Texture> &p_texture = NULL);
 	void add_material(const String &p_name, Ref<SpatialMaterial> p_material);
 
 	Ref<SpatialMaterial> get_material(const String &p_name, const Ref<EditorSpatialGizmo> &p_gizmo = Ref<EditorSpatialGizmo>());

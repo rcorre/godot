@@ -59,6 +59,9 @@
 			</argument>
 			<argument index="1" name="billboard" type="bool" default="false">
 			</argument>
+			<argument index="2" name="icon" type="Texture" default="null">
+				An optional custom icon used to render this handle. If omitted, the default handle texture is used.
+			</argument>
 			<description>
 				Creates a handle material with its variants (selected and/or editable) and adds them to the internal material list. They can then be accessed with [method get_material] and used in [method EditorSpatialGizmo.add_handles]. Should not be overridden.
 			</description>

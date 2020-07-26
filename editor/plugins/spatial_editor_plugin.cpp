@@ -6518,12 +6518,12 @@ void EditorSpatialGizmoPlugin::create_icon_material(const String &p_name, const 
 	materials[p_name] = icons;
 }
 
-void EditorSpatialGizmoPlugin::create_handle_material(const String &p_name, bool p_billboard) {
+void EditorSpatialGizmoPlugin::create_handle_material(const String &p_name, bool p_billboard, const Ref<Texture> &p_icon) {
 	Ref<SpatialMaterial> handle_material = Ref<SpatialMaterial>(memnew(SpatialMaterial));
 
 	handle_material->set_flag(SpatialMaterial::FLAG_UNSHADED, true);
 	handle_material->set_flag(SpatialMaterial::FLAG_USE_POINT_SIZE, true);
-	Ref<Texture> handle_t = SpatialEditor::get_singleton()->get_icon("Editor3DHandle", "EditorIcons");
+	Ref<Texture> handle_t = p_icon != NULL ? p_icon : SpatialEditor::get_singleton()->get_icon("Editor3DHandle", "EditorIcons");
 	handle_material->set_point_size(handle_t->get_width());
 	handle_material->set_texture(SpatialMaterial::TEXTURE_ALBEDO, handle_t);
 	handle_material->set_albedo(Color(1, 1, 1));
@@ -6604,7 +6604,7 @@ void EditorSpatialGizmoPlugin::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("create_material", "name", "color", "billboard", "on_top", "use_vertex_color"), &EditorSpatialGizmoPlugin::create_material, DEFVAL(false), DEFVAL(false), DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("create_icon_material", "name", "texture", "on_top", "color"), &EditorSpatialGizmoPlugin::create_icon_material, DEFVAL(false), DEFVAL(Color(1, 1, 1, 1)));
-	ClassDB::bind_method(D_METHOD("create_handle_material", "name", "billboard"), &EditorSpatialGizmoPlugin::create_handle_material, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("create_handle_material", "name", "billboard", "icon"), &EditorSpatialGizmoPlugin::create_handle_material, DEFVAL(false), DEFVAL(Variant()));
 	ClassDB::bind_method(D_METHOD("add_material", "name", "material"), &EditorSpatialGizmoPlugin::add_material);
 
 	ClassDB::bind_method(D_METHOD("get_material", "name", "gizmo"), &EditorSpatialGizmoPlugin::get_material); //, DEFVAL(Ref<EditorSpatialGizmo>()));
