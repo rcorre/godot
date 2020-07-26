@@ -224,6 +224,7 @@ void PathSpatialGizmo::redraw() {
 	Ref<SpatialMaterial> path_material = gizmo_plugin->get_material("path_material", this);
 	Ref<SpatialMaterial> path_thin_material = gizmo_plugin->get_material("path_thin_material", this);
 	Ref<SpatialMaterial> handles_material = gizmo_plugin->get_material("handles");
+	Ref<SpatialMaterial> sec_handles_material = gizmo_plugin->get_material("sec_handles");
 
 	Ref<Curve3D> c = path->get_curve();
 	if (c.is_null())
@@ -281,7 +282,7 @@ void PathSpatialGizmo::redraw() {
 			add_handles(handles, handles_material);
 		}
 		if (sec_handles.size()) {
-			add_handles(sec_handles, handles_material, false, true);
+			add_handles(sec_handles, sec_handles_material, false, true);
 		}
 	}
 }
@@ -653,5 +654,6 @@ PathSpatialGizmoPlugin::PathSpatialGizmoPlugin() {
 	Color path_color = EDITOR_DEF("editors/3d_gizmos/gizmo_colors/path", Color(0.5, 0.5, 1.0, 0.8));
 	create_material("path_material", path_color);
 	create_material("path_thin_material", Color(0.5, 0.5, 0.5));
-	create_handle_material("handles");
+	create_handle_material("handles", false, SpatialEditor::get_singleton()->get_icon("EditorPathSmoothHandle", "EditorIcons"));
+	create_handle_material("sec_handles", false, SpatialEditor::get_singleton()->get_icon("EditorCurveHandle", "EditorIcons"));
 }
